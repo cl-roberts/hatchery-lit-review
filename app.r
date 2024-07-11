@@ -6,10 +6,10 @@ library(DT)
 lit_raw <- read.csv("lit-database.csv") 
 
 database_names <- data.frame(
-    column_names = c("x", "covidence_id", "citation", "title", "reviewer_name", 
-                     "covidence_id", "title", "authors", "year", "journal", "lit_type",
+    column_names = c("x", "id", "citation", "title", "reviewer_name", 
+                     "id", "title", "authors", "year", "journal", "lit_type",
                      "basin", "objective", "hypothesis", "management_science",
-                     "discipline", "methods", "data_source", "study_dates", "indigenous_bool", 
+                     "discipline", "methods", "data_source", "study_dates", "indigenous", 
                      "knowledge_type", "interdisciplinary", "interdisciplinary_desc",
                      "species", "augmentation_type", "augmentation_objective_bool",
                      "augmentation_objective", "aquatic_system_type", "generations",
@@ -37,6 +37,9 @@ lit <- lit_raw |>
     
 lit$year <- gsub("[^0-9.]", "", lit$year) |>
     as.numeric()
+
+lit$indigenous_bool <- ifelse(lit$indigenous == "Yes", TRUE, FALSE)
+lit$peer_reviewed_bool <- grepl("peer-reviewed", lit$lit_type, ignore.case = TRUE)
 
 ui <- fluidPage(
 
@@ -112,6 +115,23 @@ ui <- fluidPage(
                     label = "Discipline", 
                     placeholder = "e.g. Stock Assessment")
         )
+      ),
+
+      fluidRow(
+        column(width = 6,
+          checkboxInput(inputId = "indigenous",
+                        label = "Indigenous knowledge considered?",
+                        value = FALSE),
+          checkboxInput(inputId = "peer_reviewed",
+                        label = "Peer reviewed?", 
+                        value = TRUE)
+        ),
+        column(width = 6,
+          checkboxGroupInput(inputId = "management_science",
+                       label = "Management or science focused?", 
+                       choices = c("Management", "Science"),
+                       selected = NULL)
+        )
       )
 
     ),
@@ -181,9 +201,9 @@ server <- function(input, output) {
 
       } else {
 
-        selected_species <- strsplit(input$species_oncorhynchus, split = " ") |>
-          unlist() |>
-          gsub("[[:punct:]]", "", x = _)  
+        selected_species <- gsub("[[:punct:]]", " ", x = input$species_oncorhynchus) |> 
+          strsplit(split = " ") |>
+          unlist()  
 
         oncorhynchus_filter <- as.list(lit$species) |>
             sapply(FUN = function(x) grepl(pattern = selected_species, x = x, ignore.case = TRUE))
@@ -196,9 +216,9 @@ server <- function(input, output) {
 
       } else {
 
-        selected_species <- strsplit(input$species_salmo, split = " ") |>
-          unlist() |>
-          gsub("[[:punct:]]", "", x = _)  
+        selected_species <- gsub("[[:punct:]]", " ", x = input$species_salmo) |> 
+          strsplit(split = " ") |>
+          unlist() 
 
         salmo_filter <- as.list(lit$species) |>
             sapply(FUN = function(x) grepl(pattern = selected_species, x = x, ignore.case = TRUE))
@@ -221,16 +241,62 @@ server <- function(input, output) {
     
     }
     
+    indigenous_filter <- ifelse(input$indigenous, lit$indigenous_bool, !lit$indigenous_bool)
+
+    peer_reviewed_filter <- ifelse(input$peer_reviewed, lit$peer_reviewed_bool, !lit$peer_reviewed_bool)
+
+    management_science_nopunc <- gsub("[[:punct:]]", " ", x = lit$management_science)
+
+    if (is.null(input$management_science)) {
+
+      management_science_filter <- rep(TRUE, nrow(lit))
+  
+    } else if (length(input$management_science) == 1) {
+
+      management_science_filter <- grepl(input$management_science, 
+                                         management_science_nopunc, 
+                                         ignore.case = TRUE) 
+
+    } else if (length(input$management_science) > 1) {
+
+      management_and_science <- sapply(as.list(input$management_science), 
+                                      FUN = function(x) {
+                                          grepl(x, management_science_nopunc, ignore.case = TRUE) 
+                                        }) |>
+        apply(MARGIN = 1, FUN = all)
+
+      both <- grepl("both", management_science_nopunc, ignore.case = TRUE)
+
+      management_science_filter <- apply(cbind(management_and_science, both), MARGIN = 1, FUN = any)
+
+    }
+
     tbl <- lit |> 
       filter(year_filter, basin_filter, journal_filter, discipline_filter,
-             genus_filter, species_filter) |>
-      select(covidence_id, citation, journal, basin, species)
+             genus_filter, species_filter, indigenous_filter, peer_reviewed_filter,
+             management_science_filter) |>
+      select(id, citation, journal, management_science)
 
     datatable(tbl)
 
   })
 
 }
+
+management_science_nopunc <- gsub("[[:punct:]]", " ", x = lit$management_science)
+
+management_and_science <- sapply(as.list(c("management", "science")), 
+                                 FUN = function(x) {
+                                    grepl(x, management_science_nopunc, ignore.case = TRUE) 
+                                  }) |>
+  apply(MARGIN = 1, FUN = all)
+
+both <- grepl("both", management_science_nopunc, ignore.case = TRUE)
+
+apply(cbind(management_and_science, both), MARGIN = 1, FUN = any)
+
+
+"More empirical/basic science"
 
 # Create Shiny app ----
 shinyApp(ui = ui, server = server)
