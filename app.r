@@ -9,7 +9,7 @@ database_names <- data.frame(
     column_names = c("x", "covidence_id", "citation", "title", "reviewer_name", 
                      "covidence_id", "title", "authors", "year", "journal", "lit_type",
                      "basin", "objective", "hypothesis", "management_science",
-                     "discipline", "methods", "data_source", "study_dates", "indigenous", 
+                     "discipline", "methods", "data_source", "study_dates", "indigenous_bool", 
                      "knowledge_type", "interdisciplinary", "interdisciplinary_desc",
                      "species", "augmentation_type", "augmentation_objective_bool",
                      "augmentation_objective", "aquatic_system_type", "generations",
@@ -33,13 +33,19 @@ names(name_vector) <- database_names$column_names
 
 lit <- lit_raw |>
     select(which(!duplicated(database_names$column_names))) |>
-    rename(any_of(name_vector)) |>
-    select(covidence_id, citation, year, journal, basin)
+    rename(any_of(name_vector)) 
     
 lit$year <- gsub("[^0-9.]", "", lit$year) |>
     as.numeric()
 
 ui <- fluidPage(
+
+  # tags$head(tags$style(HTML('
+  #   #genus+ div>.selectize-input {font-style: italic;}
+  #   #genus+ div>.selectize-dropdown {font-style: italic;}
+  #   #species+ div>.selectize-input {font-style: italic;}
+  #   #species+ div>.selectize-dropdown {font-style: italic;}
+  #                           '))),
 
   # App title ----
   titlePanel("Hatchery Literature Review App"),
@@ -56,7 +62,57 @@ ui <- fluidPage(
                   min = min(lit$year),
                   max = max(lit$year),
                   value = range(lit$year),
-                  sep = "")
+                  sep = ""),
+
+      fluidRow(
+          column(width = 4,
+            selectInput(inputId = "basin",
+                        label = "Basin:",
+                        choices = c("All", "Arctic", "Atlantic", "Pacific", "Indian", "Other"),
+                        selected = "All"),
+          ),
+          column(width = 4,
+            selectInput(inputId = "genus",
+                      label = "Genus:", 
+                      choices = c("All", "Oncorhynchus", "Salmo"),
+                      selected = "All")
+          ),
+          column(width = 4,
+            conditionalPanel("input.genus == 'Oncorhynchus'",
+              selectInput(inputId = "species",
+                        label = "Species:", 
+                        choices = c("All", 
+                                    "gorbuscha (pink salmon)",
+                                    "keta (chum salmon)",
+                                    "kisutch (coho salmon)",
+                                    "nerka (sockeye salmon)",
+                                    "mykiss (steelhead)",
+                                    "tshawytscha (chinook salmon)"),
+                        selected = "All")
+            ),
+            conditionalPanel("input.genus == 'Salmo'",
+              selectInput(inputId = "species",
+                        label = "Species:", 
+                        choices = c("All",
+                                    "salar (Atlantic salmon)", 
+                                    "trutta (brown trout)"),
+                        selected = "All")
+            )
+          )
+        ),
+
+      fluidRow(
+        column(width = 6,
+          textInput(inputId = "journal",
+                    label = "Journal", 
+                    placeholder = "e.g. Conservation Genetics")
+        ),
+        column(width = 6,
+          textInput(inputId = "discipline",
+                    label = "Discipline", 
+                    placeholder = "e.g. Stock Assessment")
+        )
+      )
 
     ),
 
@@ -76,11 +132,68 @@ server <- function(input, output) {
 
   output$table <- renderDataTable({
 
-      lit |> 
-        filter(between(year, input$year[1], input$year[2])) |>
-        datatable()
+    year_filter <- (input$year[1] <= lit$year) & (lit$year <= input$year[2])  
 
-    })
+    if (input$basin == "All") {
+      basin_filter <- rep(TRUE, nrow(lit))
+    } else {
+      basin_filter <- grepl(input$basin, lit$basin, ignore.case = TRUE)
+    }
+    
+    journal_filter <- grepl(input$journal, lit$journal, ignore.case = TRUE)
+
+    if (input$discipline != "") {
+
+      search_terms <- input$discipline |>
+        strsplit(split = " ") |>
+        unlist()
+
+      matches <- matrix(nrow = nrow(lit), ncol = length(search_terms))
+      for(i in seq(search_terms)) {
+        matches[,i] <- grepl(pattern = search_terms[i], x = lit$discipline, ignore.case = TRUE)
+      }
+
+      discipline_filter <- apply(X = matches, MARGIN = 1, FUN = all)
+    } else {
+      discipline_filter <- rep(TRUE, nrow(lit))
+    }
+    
+    if (input$genus == "All") {
+
+      genus_filter <- rep(TRUE, nrow(lit))
+      species_filter <- rep(TRUE, nrow(lit))
+
+    } else {
+
+      selected_species <- strsplit(input$species, split = " ") |>
+        unlist() |>
+        gsub("[[:punct:]]", "", x = _)  
+
+      genus_filter <- as.list(lit$species) |>
+        sapply(FUN = function(x) grepl(pattern = paste0(input$genus, " "), x = x, ignore.case = TRUE))
+
+      if (input$species == "All") {
+
+        species_filter <- rep(TRUE, nrow(lit))
+
+      } else {
+
+        species_filter <- as.list(lit$species) |>
+          sapply(FUN = function(x) grepl(pattern = paste0(selected_species), x = x, ignore.case = TRUE))
+          
+      }
+
+    }
+
+
+    tbl <- lit |> 
+      filter(year_filter, basin_filter, journal_filter, discipline_filter,
+             genus_filter, species_filter) |>
+      select(covidence_id, citation, journal, basin, species)
+
+    datatable(tbl)
+
+  })
 
 }
 
