@@ -79,7 +79,7 @@ ui <- fluidPage(
           ),
           column(width = 4,
             conditionalPanel("input.genus == 'Oncorhynchus'",
-              selectInput(inputId = "species",
+              selectInput(inputId = "species_oncorhynchus",
                         label = "Species:", 
                         choices = c("All", 
                                     "gorbuscha (pink salmon)",
@@ -91,7 +91,7 @@ ui <- fluidPage(
                         selected = "All")
             ),
             conditionalPanel("input.genus == 'Salmo'",
-              selectInput(inputId = "species",
+              selectInput(inputId = "species_salmo",
                         label = "Species:", 
                         choices = c("All",
                                     "salar (Atlantic salmon)", 
@@ -155,37 +155,72 @@ server <- function(input, output) {
 
       discipline_filter <- apply(X = matches, MARGIN = 1, FUN = all)
     } else {
+
       discipline_filter <- rep(TRUE, nrow(lit))
-    }
     
+    }
+
     if (input$genus == "All") {
 
       genus_filter <- rep(TRUE, nrow(lit))
-      species_filter <- rep(TRUE, nrow(lit))
+      oncorhynchus_filter <- rep(TRUE, nrow(lit))
+      salmo_filter <- rep(TRUE, nrow(lit))
 
     } else {
 
-      selected_species <- strsplit(input$species, split = " ") |>
-        unlist() |>
-        gsub("[[:punct:]]", "", x = _)  
-
       genus_filter <- as.list(lit$species) |>
-        sapply(FUN = function(x) grepl(pattern = paste0(input$genus, " "), x = x, ignore.case = TRUE))
+        sapply(FUN = function(x) {
+                pattern_end <- ifelse(input$genus == "Oncorhynchus", " |Pacific Salmon", " ")
+                grepl(pattern = paste0(input$genus, pattern_end), 
+                                      x = x, ignore.case = TRUE)
+                })
+  
+      if (input$species_oncorhynchus == "All") {
 
-      if (input$species == "All") {
-
-        species_filter <- rep(TRUE, nrow(lit))
+        oncorhynchus_filter <- rep(TRUE, nrow(lit))
 
       } else {
 
-        species_filter <- as.list(lit$species) |>
-          sapply(FUN = function(x) grepl(pattern = paste0(selected_species), x = x, ignore.case = TRUE))
-          
+        selected_species <- strsplit(input$species_oncorhynchus, split = " ") |>
+          unlist() |>
+          gsub("[[:punct:]]", "", x = _)  
+
+        oncorhynchus_filter <- as.list(lit$species) |>
+            sapply(FUN = function(x) grepl(pattern = selected_species, x = x, ignore.case = TRUE))
+
+      } 
+    
+      if (input$species_salmo == "All") {
+
+        salmo_filter <- rep(TRUE, nrow(lit))
+
+      } else {
+
+        selected_species <- strsplit(input$species_salmo, split = " ") |>
+          unlist() |>
+          gsub("[[:punct:]]", "", x = _)  
+
+        salmo_filter <- as.list(lit$species) |>
+            sapply(FUN = function(x) grepl(pattern = selected_species, x = x, ignore.case = TRUE))
+        
       }
 
     }
 
+    if (input$genus == "All") {
 
+      species_filter <- rep(TRUE, nrow(lit))
+    
+    } else if (input$genus == "Oncorhynchus") {
+    
+      species_filter <- oncorhynchus_filter
+    
+    } else if (input$genus == "Salmo") {
+    
+      species_filter <- salmo_filter
+    
+    }
+    
     tbl <- lit |> 
       filter(year_filter, basin_filter, journal_filter, discipline_filter,
              genus_filter, species_filter) |>
