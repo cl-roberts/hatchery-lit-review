@@ -48,12 +48,39 @@ names(name_vector) <- database_names$column_names
 lit <- lit_raw |>
     select(which(!duplicated(database_names$column_names))) |>
     rename(any_of(name_vector)) 
-    
+
 lit$year <- gsub("[^0-9.]", "", lit$year) |>
     as.numeric()
 
 lit$indigenous_bool <- ifelse(lit$indigenous == "Yes", TRUE, FALSE)
 lit$peer_reviewed_bool <- grepl("peer-reviewed", lit$lit_type, ignore.case = TRUE)
+
+# table with covariates for filtering articles ----
+filter_vars <- lit |>
+  select(id, year, basin, journal, discipline, species, indigenous_bool, 
+         peer_reviewed_bool, management_science)
+
+# table for displaying information on filtered articles ----
+display_vars <- lit |>
+  select(id, citation, title, hypothesis, objective, methods, conclusion) 
+
+# assigns all trues for filters not yet set ----
+all_trues <- rep(TRUE, nrow(filter_vars))
+
+# helper function ----
+
+# this function generates HTML code from a R list to be displayed below table
+
+tabContent <- function(x) {
+
+  out <- paste0("<b>", names(x[1]), ":</b><br>", x[1], "<br><br>")
+  for(i in 2:length(x)) {
+    out <- append(out, paste0("<b>", names(x[i]), ":</b><br>", x[i], "<br><br>"))
+  }
+
+  return(paste0(out, sep = " "))
+
+}
 
 #------------------------------ user interface --------------------------------#
 
@@ -71,9 +98,9 @@ ui <- fluidPage(
       # year slider ----
       sliderInput(inputId = "year",
                   label = "Year Published:",
-                  min = min(lit$year),
-                  max = max(lit$year),
-                  value = range(lit$year),
+                  min = min(filter_vars$year),
+                  max = max(filter_vars$year),
+                  value = range(filter_vars$year),
                   sep = ""),
 
       # row of dropdown menus ----
@@ -87,8 +114,8 @@ ui <- fluidPage(
           column(width = 4,
             selectInput(inputId = "genus",
                       label = "Genus:", 
-                      choices = c("All", "Oncorhynchus", "Salmo"),
-                      selected = "All")
+                      choices = c("All species", "Oncorhynchus", "Salmo"),
+                      selected = "All species")
           ),
           column(width = 4,
             conditionalPanel("input.genus == 'Oncorhynchus'",
@@ -155,9 +182,12 @@ ui <- fluidPage(
     # main table panel ----
     mainPanel(
 
-      dataTableOutput('table')  
+      dataTableOutput('table'),
+      uiOutput('selected_with_tabs')
+    
+    ),
 
-    )
+
   
   ),
  
@@ -167,50 +197,56 @@ ui <- fluidPage(
 
 server <- function(input, output) {
 
+  # set of table filters reactive to user input ----
   datasetInput <- reactive({
 
-    year_filter <- (input$year[1] <= lit$year) & (lit$year <= input$year[2])  
+    # filter by year range ---
+    year_filter <- (input$year[1] <= filter_vars$year) & (filter_vars$year <= input$year[2])  
 
+    # filter by hydrological basin ---
     if (input$basin == "All") {
 
-      basin_filter <- rep(TRUE, nrow(lit))
+      basin_filter <- all_trues
 
     } else {
 
-      basin_filter <- grepl(input$basin, lit$basin, ignore.case = TRUE)
+      basin_filter <- grepl(input$basin, filter_vars$basin, ignore.case = TRUE)
 
     }
     
-    journal_filter <- grepl(input$journal, lit$journal, ignore.case = TRUE)
+    # search for specific journals ---
+    journal_filter <- grepl(input$journal, filter_vars$journal, ignore.case = TRUE)
 
+    # search for specific discipline ---
     if (input$discipline != "") {
 
       search_terms <- input$discipline |>
         strsplit(split = " ") |>
         unlist()
 
-      matches <- matrix(nrow = nrow(lit), ncol = length(search_terms))
+      matches <- matrix(nrow = nrow(filter_vars), ncol = length(search_terms))
       for(i in seq(search_terms)) {
-        matches[,i] <- grepl(pattern = search_terms[i], x = lit$discipline, ignore.case = TRUE)
+        matches[,i] <- grepl(pattern = search_terms[i], x = filter_vars$discipline, ignore.case = TRUE)
       }
 
       discipline_filter <- apply(X = matches, MARGIN = 1, FUN = all)
   
     } else {
 
-      discipline_filter <- rep(TRUE, nrow(lit))
+      discipline_filter <- all_trues
     
     }
 
-    if (input$genus == "All") {
+    # filter by genus and species ---
+    if (input$genus == "All species") {
 
-      genus_filter <- rep(TRUE, nrow(lit))
-      oncorhynchus_filter <- rep(TRUE, nrow(lit))
-      salmo_filter <- rep(TRUE, nrow(lit))
+      genus_filter <- all_trues
+      oncorhynchus_filter <- all_trues
+      salmo_filter <- all_trues
 
     } else {
 
-      genus_filter <- as.list(lit$species) |>
+      genus_filter <- as.list(filter_vars$species) |>
         sapply(FUN = function(x) {
                 pattern_end <- ifelse(input$genus == "Oncorhynchus", " |Pacific Salmon", " ")
                 grepl(pattern = paste0(input$genus, pattern_end), 
@@ -219,7 +255,7 @@ server <- function(input, output) {
   
       if (input$species_oncorhynchus == "All") {
 
-        oncorhynchus_filter <- rep(TRUE, nrow(lit))
+        oncorhynchus_filter <- all_trues
 
       } else {
 
@@ -227,14 +263,14 @@ server <- function(input, output) {
           strsplit(split = " ") |>
           unlist()  
 
-        oncorhynchus_filter <- as.list(lit$species) |>
-            sapply(FUN = function(x) grepl(pattern = selected_species, x = x, ignore.case = TRUE))
+        oncorhynchus_filter <- as.list(filter_vars$species) |>
+            sapply(FUN = function(x) grepl(pattern = selected_species[1], x = x, ignore.case = TRUE))
 
       } 
     
       if (input$species_salmo == "All") {
 
-        salmo_filter <- rep(TRUE, nrow(lit))
+        salmo_filter <- all_trues
 
       } else {
 
@@ -242,16 +278,17 @@ server <- function(input, output) {
           strsplit(split = " ") |>
           unlist() 
 
-        salmo_filter <- as.list(lit$species) |>
-            sapply(FUN = function(x) grepl(pattern = selected_species, x = x, ignore.case = TRUE))
+        salmo_filter <- as.list(filter_vars$species) |>
+            sapply(FUN = function(x) grepl(pattern = selected_species[1], x = x, ignore.case = TRUE))
         
       }
 
     }
 
-    if (input$genus == "All") {
+    # condense into single filter ---
+    if (input$genus == "All species") {
 
-      species_filter <- rep(TRUE, nrow(lit))
+      species_filter <- all_trues
     
     } else if (input$genus == "Oncorhynchus") {
     
@@ -263,15 +300,18 @@ server <- function(input, output) {
     
     }
     
-    indigenous_filter <- ifelse(input$indigenous, lit$indigenous_bool, !lit$indigenous_bool)
+    # filter by indigenous knowledge check box ---
+    indigenous_filter <- ifelse(input$indigenous, filter_vars$indigenous_bool, !filter_vars$indigenous_bool)
 
-    peer_reviewed_filter <- ifelse(input$peer_reviewed, lit$peer_reviewed_bool, !lit$peer_reviewed_bool)
+    # filter by peer reviewed check box ---
+    peer_reviewed_filter <- ifelse(input$peer_reviewed, filter_vars$peer_reviewed_bool, !filter_vars$peer_reviewed_bool)
 
-    management_science_nopunc <- gsub("[[:punct:]]", " ", x = lit$management_science)
+    # filter by management and/or science focused ---
+    management_science_nopunc <- gsub("[[:punct:]]", " ", x = filter_vars$management_science)
 
     if (is.null(input$management_science)) {
 
-      management_science_filter <- rep(TRUE, nrow(lit))
+      management_science_filter <- all_trues
   
     } else if (length(input$management_science) == 1) {
 
@@ -293,50 +333,72 @@ server <- function(input, output) {
 
     }
 
-    tbl <- lit |> 
+    # apply all filters and return table ---
+    tbl <- display_vars |> 
       filter(year_filter, basin_filter, journal_filter, discipline_filter,
             genus_filter, species_filter, indigenous_filter, peer_reviewed_filter,
             management_science_filter)
 
+    rownames(tbl) <- tbl$id
     tbl
 
   })
 
+  # render filtered table ---
   output$table <- renderDataTable({
 
-    show_columns <- colnames(lit) %in% c("id", "citation", "title")
+    show_columns <- colnames(display_vars) %in% c("citation", "title")
 
-    datatable(datasetInput(), 
+    datatable(datasetInput(), escape = FALSE, selection = list(mode = "multiple"),
               options = list(columnDefs = list(list(visible=FALSE, 
                                                     targets=which(!show_columns)
-                                                    )),
-                             rowCallback = JS(
-                              "function(row, data) {",
-                              paste0("var full_text = ",
-                                     "'\\n\\nHypothesis: ' +",
-                                     paste0("data[", which(colnames(lit) == "hypothesis"), "] + "),
-                                     "'\\n\\nObjective: ' +",
-                                     paste0("data[", which(colnames(lit) == "objective"), "] + "),
-                                     "'\\n\\nConclusion: ' +",
-                                     paste0("data[", which(colnames(lit) == "conclusion"), "]")                                     
-                                     ),
-                              "$('td', row).attr('title', full_text);",
-                              "}"
-                              )
+                                                    ))
                             )
               )
 
   })
 
+  # identify selected tabs ----
+  filteredTable_selected <- eventReactive(input$table_rows_selected, {
+
+    ids <- input$table_rows_selected
+    rownames(datasetInput()[ids,])
+
+  })
+
+  # generate selected tabs ----
+  output$selected_with_tabs <- renderUI({
+
+    tabs <- filteredTable_selected() %>% 
+              purrr::map2(1:length(.), ~ tabPanel(title = .x, {
+
+                datasetInput()[rownames(datasetInput()) == .,] |>
+                  tabContent() |>
+                  HTML()
+
+              }))
+
+    tabsetPanel_wselection <- purrr::partial(tabsetPanel, selected = filteredTable_selected()[length(filteredTable_selected())])
+    
+    tagList(rlang::exec(tabsetPanel_wselection, !!!tabs)) 
+    
+  }) 
+
+  # handle csv download for selected rows ---
   output$downloadData <- downloadHandler(
 
     filename = function() {
-      paste0("selected_article_metadata_", gsub(" ","_", gsub(":",".", Sys.time())),".csv")
+
+      paste0("selected_articles", gsub(" ","_", gsub(":",".", Sys.time())),".csv")
+
     },
 
     content = function(file) {
 
-      write.csv(datasetInput()[input$table_rows_selected,], file, row.names = TRUE)
+      rows <- match(datasetInput()[input$table_rows_selected,"id"], lit$id)
+
+      write.table(lit[rows,], file, sep = ",", 
+                  row.names = FALSE, col.names = database_names$descriptions)
 
     }
 
@@ -344,10 +406,6 @@ server <- function(input, output) {
 
 }
 
-# tbl <- lit[4:10,]
 
-# tbl[c(2, 5),"id"] %in% lit_raw$Covidence..
-
-
-# Create Shiny app ----
+# open shiny app ----
 shinyApp(ui = ui, server = server)
