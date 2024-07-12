@@ -1,8 +1,22 @@
+################################################################################
+
+# Hatchery literature review app
+
+# Author: CL Roberts
+
+################################################################################
+
+
+#------------------------------ front matter ----------------------------------#
+
+# attach packages ----
+
 library(shiny)
 library(dplyr)
 library(DT)
 
-# read in data
+# read and wrangle data ----
+
 lit_raw <- read.csv("lit-database.csv") 
 
 database_names <- data.frame(
@@ -41,25 +55,20 @@ lit$year <- gsub("[^0-9.]", "", lit$year) |>
 lit$indigenous_bool <- ifelse(lit$indigenous == "Yes", TRUE, FALSE)
 lit$peer_reviewed_bool <- grepl("peer-reviewed", lit$lit_type, ignore.case = TRUE)
 
+#------------------------------ user interface --------------------------------#
+
 ui <- fluidPage(
 
-  # tags$head(tags$style(HTML('
-  #   #genus+ div>.selectize-input {font-style: italic;}
-  #   #genus+ div>.selectize-dropdown {font-style: italic;}
-  #   #species+ div>.selectize-input {font-style: italic;}
-  #   #species+ div>.selectize-dropdown {font-style: italic;}
-  #                           '))),
-
-  # App title ----
+  # app title ----
   titlePanel("Hatchery Literature Review App"),
 
-  # Sidebar layout with input and output definitions ----
+  # sidebar layout with input and output definitions ----
   sidebarLayout(
 
-    # Sidebar panel for inputs ----
+    # sidebar panel for inputs ----
     sidebarPanel(
 
-      # Input: Slider for the number of bins ----
+      # year slider ----
       sliderInput(inputId = "year",
                   label = "Year Published:",
                   min = min(lit$year),
@@ -67,7 +76,8 @@ ui <- fluidPage(
                   value = range(lit$year),
                   sep = ""),
 
-      fluidRow(
+      # row of dropdown menus ----
+      fluidRow( 
           column(width = 4,
             selectInput(inputId = "basin",
                         label = "Basin:",
@@ -104,6 +114,7 @@ ui <- fluidPage(
           )
         ),
 
+      # row of search bars ----
       fluidRow(
         column(width = 6,
           textInput(inputId = "journal",
@@ -117,6 +128,7 @@ ui <- fluidPage(
         )
       ),
 
+      # row of check boxes ----
       fluidRow(
         column(width = 6,
           checkboxInput(inputId = "indigenous",
@@ -132,14 +144,18 @@ ui <- fluidPage(
                        choices = c("Management", "Science"),
                        selected = NULL)
         )
-      )
+      ),
+
+      # download button ----
+      downloadButton("downloadData", "Download Metadata for Selected Articles", 
+                     style = "display: flow;")                     
 
     ),
 
-    # main table panel
+    # main table panel ----
     mainPanel(
 
-      dataTableOutput("table")
+      dataTableOutput('table')  
 
     )
   
@@ -147,17 +163,22 @@ ui <- fluidPage(
  
 )
 
-# Define server logic required to draw a histogram ----
+#--------------------------------- server -------------------------------------#
+
 server <- function(input, output) {
 
-  output$table <- renderDataTable({
+  datasetInput <- reactive({
 
     year_filter <- (input$year[1] <= lit$year) & (lit$year <= input$year[2])  
 
     if (input$basin == "All") {
+
       basin_filter <- rep(TRUE, nrow(lit))
+
     } else {
+
       basin_filter <- grepl(input$basin, lit$basin, ignore.case = TRUE)
+
     }
     
     journal_filter <- grepl(input$journal, lit$journal, ignore.case = TRUE)
@@ -174,6 +195,7 @@ server <- function(input, output) {
       }
 
       discipline_filter <- apply(X = matches, MARGIN = 1, FUN = all)
+  
     } else {
 
       discipline_filter <- rep(TRUE, nrow(lit))
@@ -254,8 +276,8 @@ server <- function(input, output) {
     } else if (length(input$management_science) == 1) {
 
       management_science_filter <- grepl(input$management_science, 
-                                         management_science_nopunc, 
-                                         ignore.case = TRUE) 
+                                        management_science_nopunc, 
+                                        ignore.case = TRUE) 
 
     } else if (length(input$management_science) > 1) {
 
@@ -273,30 +295,59 @@ server <- function(input, output) {
 
     tbl <- lit |> 
       filter(year_filter, basin_filter, journal_filter, discipline_filter,
-             genus_filter, species_filter, indigenous_filter, peer_reviewed_filter,
-             management_science_filter) |>
-      select(id, citation, journal, management_science)
+            genus_filter, species_filter, indigenous_filter, peer_reviewed_filter,
+            management_science_filter)
 
-    datatable(tbl)
+    tbl
 
   })
 
+  output$table <- renderDataTable({
+
+    show_columns <- colnames(lit) %in% c("id", "citation", "title")
+
+    datatable(datasetInput(), 
+              options = list(columnDefs = list(list(visible=FALSE, 
+                                                    targets=which(!show_columns)
+                                                    )),
+                             rowCallback = JS(
+                              "function(row, data) {",
+                              paste0("var full_text = ",
+                                     "'\\n\\nHypothesis: ' +",
+                                     paste0("data[", which(colnames(lit) == "hypothesis"), "] + "),
+                                     "'\\n\\nObjective: ' +",
+                                     paste0("data[", which(colnames(lit) == "objective"), "] + "),
+                                     "'\\n\\nConclusion: ' +",
+                                     paste0("data[", which(colnames(lit) == "conclusion"), "]")                                     
+                                     ),
+                              "$('td', row).attr('title', full_text);",
+                              "}"
+                              )
+                            )
+              )
+
+  })
+
+  output$downloadData <- downloadHandler(
+
+    filename = function() {
+      paste0("selected_article_metadata_", gsub(" ","_", gsub(":",".", Sys.time())),".csv")
+    },
+
+    content = function(file) {
+
+      write.csv(datasetInput()[input$table_rows_selected,], file, row.names = TRUE)
+
+    }
+
+  )
+
 }
 
-management_science_nopunc <- gsub("[[:punct:]]", " ", x = lit$management_science)
+# tbl <- lit[4:10,]
 
-management_and_science <- sapply(as.list(c("management", "science")), 
-                                 FUN = function(x) {
-                                    grepl(x, management_science_nopunc, ignore.case = TRUE) 
-                                  }) |>
-  apply(MARGIN = 1, FUN = all)
+# tbl[c(2, 5),"id"] %in% lit_raw$Covidence..
 
-both <- grepl("both", management_science_nopunc, ignore.case = TRUE)
-
-apply(cbind(management_and_science, both), MARGIN = 1, FUN = any)
-
-
-"More empirical/basic science"
 
 # Create Shiny app ----
 shinyApp(ui = ui, server = server)
