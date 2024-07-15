@@ -29,10 +29,17 @@ ui  <- page_sidebar(
   theme = bs_theme(bootswatch = "sandstone"),
 
   # app title ----
-  title = "Hatchery Literature Review App",
+  title = h2("Hatchery Literature Review App"),
+
+  tags$head(tags$script(
+              HTML('$(document).ready(function() {
+                      $(".navbar .container-fluid")
+                        .append("<img id=fish src=fish.svg align=right height=57.5px>");
+                    });'))
+            ),
 
   # sidebar panel for inputs ----
-  sidebar = sidebar(width = 500,
+  sidebar = sidebar(title = h4("Search Literature:"), width = 500,
 
     # year slider ----
     sliderInput(inputId = "year",
@@ -120,10 +127,10 @@ ui  <- page_sidebar(
 
   layout_columns(
 
-    card(card_header("Literature Search Results"),
+    card(card_header(h4("Literature Search Results")),
          dataTableOutput('table')),
 
-    card(card_header("More Information on Selected Articles"), 
+    card(card_header(h4("More Information on Selected Articles")), 
          uiOutput('selected_with_tabs')),
 
     col_widths = c(12, 12)
