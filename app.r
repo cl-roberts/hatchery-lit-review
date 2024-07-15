@@ -15,124 +15,128 @@ library(shiny)
 library(dplyr)
 library(DT)
 library(bslib)
+library(tidyverse)
+library(rlang)
 
 source("setup.r")
 source("helper.r")
 
 #------------------------------ user interface --------------------------------#
 
-ui <- fluidPage(
+ui  <- page_sidebar(
+
+  # app theme ----
+  theme = bs_theme(bootswatch = "sandstone"),
 
   # app title ----
-  titlePanel("Hatchery Literature Review App"),
+  title = "Hatchery Literature Review App",
 
-  # sidebar layout with input and output definitions ----
-  sidebarLayout(
+  # sidebar panel for inputs ----
+  sidebar = sidebar(width = 500,
 
-    # sidebar panel for inputs ----
-    sidebarPanel(
+    # year slider ----
+    sliderInput(inputId = "year",
+                label = "Year Published:",
+                min = min(filter_vars$year),
+                max = max(filter_vars$year),
+                value = range(filter_vars$year),
+                sep = ""),
 
-      # year slider ----
-      sliderInput(inputId = "year",
-                  label = "Year Published:",
-                  min = min(filter_vars$year),
-                  max = max(filter_vars$year),
-                  value = range(filter_vars$year),
-                  sep = ""),
-
-      # row of dropdown menus ----
-      fluidRow( 
-          column(width = 4,
-            selectInput(inputId = "basin",
-                        label = "Basin:",
-                        choices = c("All", "Arctic", "Atlantic", "Pacific", "Indian", "Other"),
-                        selected = "All"),
+    # row of dropdown menus ----
+    fluidRow( 
+        column(width = 4,
+          selectInput(inputId = "basin",
+                      label = "Basin:",
+                      choices = c("All", "Arctic", "Atlantic", "Pacific", "Indian", "Other"),
+                      selected = "All"),
+        ),
+        column(width = 4,
+          selectInput(inputId = "genus",
+                    label = "Genus:", 
+                    choices = c("All species", "Oncorhynchus", "Salmo"),
+                    selected = "All species")
+        ),
+        column(width = 4,
+          conditionalPanel("input.genus == 'Oncorhynchus'",
+            selectInput(inputId = "species_oncorhynchus",
+                      label = "Species:", 
+                      choices = c("All", 
+                                  "gorbuscha (pink salmon)",
+                                  "keta (chum salmon)",
+                                  "kisutch (coho salmon)",
+                                  "nerka (sockeye salmon)",
+                                  "mykiss (steelhead)",
+                                  "tshawytscha (chinook salmon)"),
+                      selected = "All")
           ),
-          column(width = 4,
-            selectInput(inputId = "genus",
-                      label = "Genus:", 
-                      choices = c("All species", "Oncorhynchus", "Salmo"),
-                      selected = "All species")
-          ),
-          column(width = 4,
-            conditionalPanel("input.genus == 'Oncorhynchus'",
-              selectInput(inputId = "species_oncorhynchus",
-                        label = "Species:", 
-                        choices = c("All", 
-                                    "gorbuscha (pink salmon)",
-                                    "keta (chum salmon)",
-                                    "kisutch (coho salmon)",
-                                    "nerka (sockeye salmon)",
-                                    "mykiss (steelhead)",
-                                    "tshawytscha (chinook salmon)"),
-                        selected = "All")
-            ),
-            conditionalPanel("input.genus == 'Salmo'",
-              selectInput(inputId = "species_salmo",
-                        label = "Species:", 
-                        choices = c("All",
-                                    "salar (Atlantic salmon)", 
-                                    "trutta (brown trout)"),
-                        selected = "All")
-            )
+          conditionalPanel("input.genus == 'Salmo'",
+            selectInput(inputId = "species_salmo",
+                      label = "Species:", 
+                      choices = c("All",
+                                  "salar (Atlantic salmon)", 
+                                  "trutta (brown trout)"),
+                      selected = "All")
           )
-        ),
-
-      # row of search bars ----
-      fluidRow(
-        column(width = 6,
-          textInput(inputId = "journal",
-                    label = "Journal", 
-                    placeholder = "e.g. Conservation Genetics")
-        ),
-        column(width = 6,
-          textInput(inputId = "discipline",
-                    label = "Discipline", 
-                    placeholder = "e.g. Stock Assessment")
         )
       ),
 
-      # row of check boxes ----
-      fluidRow(
-        column(width = 6,
-          checkboxInput(inputId = "indigenous",
-                        label = "Indigenous knowledge considered?",
-                        value = FALSE),
-          checkboxInput(inputId = "peer_reviewed",
-                        label = "Peer reviewed?", 
-                        value = TRUE)
-        ),
-        column(width = 6,
-          checkboxGroupInput(inputId = "management_science",
-                       label = "Management or science focused?", 
-                       choices = c("Management", "Science"),
-                       selected = NULL)
-        )
+    # row of search bars ----
+    fluidRow(
+      column(width = 6,
+        textInput(inputId = "journal",
+                  label = "Journal", 
+                  placeholder = "e.g. Conservation Genetics")
       ),
-
-      # download button ----
-      downloadButton("downloadData", "Download Metadata for Selected Articles", 
-                     style = "display: flow;")                     
-
+      column(width = 6,
+        textInput(inputId = "discipline",
+                  label = "Discipline", 
+                  placeholder = "e.g. Stock Assessment")
+      )
     ),
 
-    # main table panel ----
-    mainPanel(
-
-      dataTableOutput('table'),
-      uiOutput('selected_with_tabs')
-    
+    # row of check boxes ----
+    fluidRow(
+      column(width = 6,
+        checkboxInput(inputId = "indigenous",
+                      label = "Indigenous knowledge considered?",
+                      value = FALSE),
+        checkboxInput(inputId = "peer_reviewed",
+                      label = "Peer reviewed?", 
+                      value = TRUE)
+      ),
+      column(width = 6,
+        checkboxGroupInput(inputId = "management_science",
+                      label = "Management or science focused?", 
+                      choices = c("Management", "Science"),
+                      selected = NULL)
+      )
     ),
 
+    # download button ----
+    downloadButton("downloadData", "Download Metadata for Selected Articles", 
+                    style = "display: flow;")
 
-  
   ),
- 
+
+  layout_columns(
+
+    card(card_header("Literature Search Results"),
+         dataTableOutput('table')),
+
+    card(card_header("More Information on Selected Articles"), 
+         uiOutput('selected_with_tabs')),
+
+    col_widths = c(12, 12)
+
+  )
+
 )
 
 #--------------------------------- server -------------------------------------#
 
 server <- function(input, output) {
+
+  # bs_themer()  # uncomment to enable a widget for previewing different themes
 
   # set of table filters reactive to user input ----
   datasetInput <- reactive({
@@ -277,7 +281,7 @@ server <- function(input, output) {
             management_science_filter)
 
     rownames(tbl) <- tbl$id
-    tbl
+    tbl 
 
   })
 
@@ -287,6 +291,7 @@ server <- function(input, output) {
     show_columns <- colnames(display_vars) %in% c("citation", "title")
 
     datatable(datasetInput(), escape = FALSE, selection = list(mode = "multiple"),
+              style = "auto", colnames = str_to_title(colnames(datasetInput())),
               options = list(columnDefs = list(list(visible=FALSE, 
                                                     targets=which(!show_columns)
                                                     ))
@@ -307,17 +312,18 @@ server <- function(input, output) {
   output$selected_with_tabs <- renderUI({
 
     tabs <- filteredTable_selected() %>% 
-              purrr::map2(1:length(.), ~ tabPanel(title = .x, {
+              map2(1:length(.), ~ tabPanel(title = .x, {
 
                 datasetInput()[rownames(datasetInput()) == .,] |>
+                  select(!id) |>
                   tabContent() |>
                   HTML()
 
               }))
 
-    tabsetPanel_wselection <- purrr::partial(tabsetPanel, selected = filteredTable_selected()[length(filteredTable_selected())])
+    tabsetPanel_wselection <- partial(tabsetPanel, selected = filteredTable_selected()[length(filteredTable_selected())])
     
-    tagList(rlang::exec(tabsetPanel_wselection, !!!tabs)) 
+    tagList(exec(tabsetPanel_wselection, !!!tabs)) 
     
   }) 
 
