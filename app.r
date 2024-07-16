@@ -12,7 +12,6 @@
 # attach packages and source utility scripts ----
 
 library(shiny)
-library(dplyr)
 library(DT)
 library(bslib)
 library(tidyverse)
