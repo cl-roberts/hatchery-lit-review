@@ -9,8 +9,7 @@
 
 #------------------------------ front matter ----------------------------------#
 
-# attach packages and source utility scripts ----
-
+# attach packages ---
 library(shiny)
 library(DT)
 library(bslib)
@@ -18,8 +17,12 @@ library(tidyverse)
 library(rlang)
 library(stringr)
 
+# source utility scripts ----
 source("setup.r")
 source("helper.r")
+
+# identifies temp directory to delete when app closes ----
+tmp_dir <- tempdir()
 
 #------------------------------ user interface --------------------------------#
 
@@ -400,11 +403,22 @@ server <- function(input, output) {
 
   # prints output to UI for debugging purposes ----
   # output$debug <- renderText({
-  #   toString()
+  #   toString(tmp_dir)
   # })
 
-}
+  # executes a cleanup routine on application end ----
+  if(Sys.getenv('SHINY_PORT') == "") {
 
+    onStop(function() {
+
+      unlink(tmp_dir, recursive = TRUE)
+      cat("Sweeping temporary files\n")
+
+    })
+
+  }
+  
+}
 
 # open shiny app ----
 shinyApp(ui = ui, server = server)
