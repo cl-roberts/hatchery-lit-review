@@ -16,6 +16,7 @@ library(DT)
 library(bslib)
 library(tidyverse)
 library(rlang)
+library(stringr)
 
 source("setup.r")
 source("helper.r")
@@ -25,7 +26,7 @@ source("helper.r")
 ui  <- page_sidebar(
 
   # app theme ----
-  theme = bs_theme(bootswatch = "sandstone"),
+  theme = bs_theme(bootswatch = "sandstone", font_scale = .8),
 
   # app title ----
   title = h2("Hatchery Literature Review App"),
@@ -38,7 +39,7 @@ ui  <- page_sidebar(
             ),
 
   # sidebar panel for inputs ----
-  sidebar = sidebar(title = h4("Search Literature:"), width = 500,
+  sidebar = sidebar(title = h4("Search Literature:"), width = 350,
 
     # year slider ----
     sliderInput(inputId = "year",
@@ -50,19 +51,13 @@ ui  <- page_sidebar(
 
     # row of dropdown menus ----
     fluidRow( 
-        column(width = 4,
-          selectInput(inputId = "basin",
-                      label = "Basin:",
-                      choices = c("All", "Arctic", "Atlantic", "Pacific", "Indian", "Other"),
-                      selected = "All"),
-        ),
-        column(width = 4,
+        column(width = 6,
           selectInput(inputId = "genus",
                     label = "Genus:", 
                     choices = c("All species", "Oncorhynchus", "Salmo"),
                     selected = "All species")
         ),
-        column(width = 4,
+        column(width = 6,
           conditionalPanel("input.genus == 'Oncorhynchus'",
             selectInput(inputId = "species_oncorhynchus",
                       label = "Species:", 
@@ -86,37 +81,42 @@ ui  <- page_sidebar(
         )
       ),
 
-    # row of search bars ----
-    fluidRow(
-      column(width = 6,
-        textInput(inputId = "journal",
-                  label = "Journal", 
-                  placeholder = "e.g. Conservation Genetics")
-      ),
-      column(width = 6,
-        textInput(inputId = "discipline",
-                  label = "Discipline", 
-                  placeholder = "e.g. Stock Assessment")
-      )
+    # search bars ----
+    column(width = 12,
+      textInput(inputId = "key_words",
+                label = "Key Words", 
+                placeholder = "e.g. Stock Assessment")
+    ),
+    column(width = 12,
+      selectInput(inputId = "basin",
+                  label = "Basin:",
+                  choices = c("All", "Arctic", "Atlantic", "Pacific", "Indian", "Other"),
+                  selected = "All"),
+    ),
+    column(width = 12,
+      textInput(inputId = "journal",
+                label = "Journal", 
+                placeholder = "e.g. Conservation Genetics")
     ),
 
-    # row of check boxes ----
-    fluidRow(
-      column(width = 6,
-        checkboxInput(inputId = "indigenous",
-                      label = "Indigenous knowledge considered?",
-                      value = FALSE),
-        checkboxInput(inputId = "peer_reviewed",
-                      label = "Peer reviewed?", 
-                      value = TRUE)
-      ),
-      column(width = 6,
-        checkboxGroupInput(inputId = "management_science",
-                      label = "Management or science focused?", 
-                      choices = c("Management", "Science"),
-                      selected = NULL)
-      )
+
+    # check boxes ----
+    column(width = 12,
+      checkboxGroupInput(inputId = "management_science",
+                    label = "Management or science focused?", 
+                    choices = c("Management", "Science"),
+                    selected = NULL, inline = TRUE)
     ),
+
+    radioButtons(inputId = "indigenous",
+                  label = "Indigenous knowledge considered?",
+                  choices = c("Yes", "No", "Either"), selected = "Either"),
+    radioButtons(inputId = "peer_reviewed",
+                  label = "Peer reviewed?", 
+                  choices = c("Yes", "No", "Either"), selected = "Either"),
+    radioButtons(inputId = "climate_change",
+                  label = "Addresses climate change?", 
+                  choices = c("Yes", "No", "Either"), selected = "Either"),
 
     # download button ----
     downloadButton("downloadData", "Download Metadata for Selected Articles", 
@@ -126,13 +126,16 @@ ui  <- page_sidebar(
 
   layout_columns(
 
+    # card(card_header(h4("Debugging pane")), 
+    #      textOutput('debug')),
+
     card(card_header(h4("Literature Search Results")),
          dataTableOutput('table')),
 
     card(card_header(h4("More Information on Selected Articles")), 
          uiOutput('selected_with_tabs')),
 
-    col_widths = c(12, 12)
+    col_widths = c(7, 5)
 
   )
 
@@ -164,23 +167,25 @@ server <- function(input, output) {
     # search for specific journals ---
     journal_filter <- grepl(input$journal, filter_vars$journal, ignore.case = TRUE)
 
-    # search for specific discipline ---
-    if (input$discipline != "") {
-
-      search_terms <- input$discipline |>
+    # search using key words (uses both discipline and key themes) ---
+    if (input$key_words != "") {
+      
+      search_key_words <- input$key_words |>
         strsplit(split = " ") |>
         unlist()
 
-      matches <- matrix(nrow = nrow(filter_vars), ncol = length(search_terms))
-      for(i in seq(search_terms)) {
-        matches[,i] <- grepl(pattern = search_terms[i], x = filter_vars$discipline, ignore.case = TRUE)
+      matches <- matrix(nrow = nrow(filter_vars), ncol = length(search_key_words))
+      for(i in seq(search_key_words)) {
+        tmp_discipline <- grepl(pattern = search_key_words[i], x = filter_vars$discipline, ignore.case = TRUE)
+        tmp_key_themes <- grepl(pattern = search_key_words[i], x = filter_vars$key_themes, ignore.case = TRUE)
+        matches[,i] <- apply(cbind(tmp_discipline, tmp_key_themes), MARGIN = 1, FUN = any)
       }
 
-      discipline_filter <- apply(X = matches, MARGIN = 1, FUN = all)
+      key_words_filter <- apply(X = matches, MARGIN = 1, FUN = all)
   
     } else {
 
-      discipline_filter <- all_trues
+      key_words_filter <- all_trues
     
     }
 
@@ -248,10 +253,49 @@ server <- function(input, output) {
     }
     
     # filter by indigenous knowledge check box ---
-    indigenous_filter <- ifelse(input$indigenous, filter_vars$indigenous_bool, !filter_vars$indigenous_bool)
+    if (input$indigenous == "Yes") {
 
+      indigenous_filter <- filter_vars$indigenous_bool
+
+    } else if (input$indigenous == "No") {
+
+      indigenous_filter <- !filter_vars$indigenous_bool
+
+    } else {
+      
+      indigenous_filter <- all_trues
+
+    }
+    
     # filter by peer reviewed check box ---
-    peer_reviewed_filter <- ifelse(input$peer_reviewed, filter_vars$peer_reviewed_bool, !filter_vars$peer_reviewed_bool)
+    if (input$peer_reviewed == "Yes") {
+
+      peer_reviewed_filter <- filter_vars$peer_reviewed_bool
+
+    } else if (input$peer_reviewed == "No") {
+
+      peer_reviewed_filter <- !filter_vars$peer_reviewed_bool
+
+    } else {
+
+      peer_reviewed_filter <- all_trues
+
+    }
+
+    # filter by climate change check box ---
+    if (input$climate_change == "Yes") {
+
+      climate_change_filter <- filter_vars$climate_change_bool
+
+    } else if (input$climate_change == "No") {
+
+      climate_change_filter <- !filter_vars$climate_change_bool
+
+    } else {
+
+      climate_change_filter <- all_trues
+
+    }
 
     # filter by management and/or science focused ---
     management_science_nopunc <- gsub("[[:punct:]]", " ", x = filter_vars$management_science)
@@ -282,9 +326,9 @@ server <- function(input, output) {
 
     # apply all filters and return table ---
     tbl <- display_vars |> 
-      filter(year_filter, basin_filter, journal_filter, discipline_filter,
+      filter(year_filter, basin_filter, journal_filter, key_words_filter,
             genus_filter, species_filter, indigenous_filter, peer_reviewed_filter,
-            management_science_filter)
+            management_science_filter, climate_change_filter)
 
     rownames(tbl) <- tbl$id
     tbl 
@@ -296,7 +340,8 @@ server <- function(input, output) {
 
     show_columns <- colnames(display_vars) %in% c("citation", "title")
 
-    datatable(datasetInput(), escape = FALSE, selection = list(mode = "multiple"),
+    datatable(datasetInput(), escape = FALSE, 
+              selection = list(mode = "multiple"),
               style = "auto", colnames = str_to_title(colnames(datasetInput())),
               options = list(columnDefs = list(list(visible=FALSE, 
                                                     targets=which(!show_columns)
@@ -352,6 +397,11 @@ server <- function(input, output) {
     }
 
   )
+
+  # prints output to UI for debugging purposes ----
+  # output$debug <- renderText({
+  #   toString()
+  # })
 
 }
 

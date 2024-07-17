@@ -14,8 +14,8 @@ database_names <- data.frame(
                      "feeding_stage_released", "feed_type_bool", "feed_type", 
                      "conclusion_bool", "conclusion", "wild_definition_bool", 
                      "wild_definition", "conservation_standard_bool", 
-                     "conservation_standard", "knowledge_gaps_bool", 
-                     "knowledge gaps", "management_rec_bool", "key_finding", 
+                     "conservation_standard", "knowledge_gaps", 
+                     "knowledge gaps", "management_recommendation", "key_finding", 
                      "key_themes", "climate_change", "address_research_topics"),
     descriptions = gsub("\\.+", replacement = " ", names(lit_raw)) |>
         gsub("[0-9]", replacement = "", x = _) |>
@@ -37,15 +37,19 @@ lit$year <- gsub("[^0-9.]", "", lit$year) |>
 
 lit$indigenous_bool <- ifelse(lit$indigenous == "Yes", TRUE, FALSE)
 lit$peer_reviewed_bool <- grepl("peer-reviewed", lit$lit_type, ignore.case = TRUE)
+lit$climate_change_bool <- ifelse(lit$climate_change == "Yes", TRUE, FALSE)
 
 # table with covariates for filtering articles ----
 filter_vars <- lit |>
   select(id, year, basin, journal, discipline, species, indigenous_bool, 
-         peer_reviewed_bool, management_science)
+         peer_reviewed_bool, management_science, key_themes, climate_change_bool)
 
 # table for displaying information on filtered articles ----
 display_vars <- lit |>
-  select(id, citation, title, hypothesis, objective, methods, conclusion) 
+  select(id, citation, title, key_finding, hypothesis, objective, methods, conclusion, key_themes,
+         discipline, augmentation_objective, augmentation_type, aquatic_system_type,
+         generations, life_stage_released, age_released, feeding_stage_released,
+         wild_definition, conservation_standard, knowledge_gaps, management_recommendation) 
 
 # assigns all trues for filters not yet set ----
 all_trues <- rep(TRUE, nrow(filter_vars))
