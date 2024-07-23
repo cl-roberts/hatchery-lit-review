@@ -14,8 +14,8 @@ database_names <- data.frame(
                      "feeding_stage_released", "feed_type_bool", "feed_type", 
                      "conclusion_bool", "conclusion", "wild_definition_bool", 
                      "wild_definition", "conservation_standard_bool", 
-                     "conservation_standard", "knowledge_gaps", 
-                     "knowledge gaps", "management_recommendation", "key_finding", 
+                     "conservation_standard", "knowledge_gaps_bool", 
+                     "knowledge_gaps", "management_recommendation", "key_finding", 
                      "key_themes", "climate_change", "address_research_topics"),
     descriptions = gsub("\\.+", replacement = " ", names(lit_raw)) |>
         gsub("[0-9]", replacement = "", x = _) |>
@@ -50,6 +50,8 @@ display_vars <- lit |>
          discipline, augmentation_objective, augmentation_type, aquatic_system_type,
          generations, life_stage_released, age_released, feeding_stage_released,
          wild_definition, conservation_standard, knowledge_gaps, management_recommendation) 
+
+rownames(display_vars) <- display_vars$id
 
 # assigns all trues for filters not yet set ----
 all_trues <- rep(TRUE, nrow(filter_vars))

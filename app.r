@@ -121,6 +121,10 @@ ui  <- page_sidebar(
                   label = "Addresses climate change?", 
                   choices = c("Yes", "No", "Either"), selected = "Either"),
 
+    # action button to clear selected rows ----
+    actionButton("clearSelected", "Clear Selected Articles", 
+                 style = "display: flow;", icon = icon("rotate-left")),
+
     # download button ----
     downloadButton("downloadData", "Download Metadata for Selected Articles", 
                     style = "display: flow;")
@@ -151,7 +155,7 @@ server <- function(input, output) {
   # bs_themer()  # uncomment to enable a widget for previewing different themes
 
   # set of table filters reactive to user input ----
-  datasetInput <- reactive({
+  applyFilters <- reactive({
 
     # filter by year range ---
     year_filter <- (input$year[1] <= filter_vars$year) & (filter_vars$year <= input$year[2])  
@@ -327,11 +331,20 @@ server <- function(input, output) {
 
     }
 
-    # apply all filters and return table ---
+    # combine all filters into a single logical vector ---
+    cbind(year_filter, basin_filter, journal_filter, key_words_filter,
+          genus_filter, species_filter, indigenous_filter, peer_reviewed_filter,
+          management_science_filter, climate_change_filter) |>
+        apply(MARGIN = 1, FUN = all)
+
+  })
+
+
+  # apply filters to main table ---
+  datasetInput <- reactive({
+
     tbl <- display_vars |> 
-      filter(year_filter, basin_filter, journal_filter, key_words_filter,
-            genus_filter, species_filter, indigenous_filter, peer_reviewed_filter,
-            management_science_filter, climate_change_filter)
+      filter(applyFilters())
 
     rownames(tbl) <- tbl$id
     tbl 
@@ -344,7 +357,7 @@ server <- function(input, output) {
     show_columns <- colnames(display_vars) %in% c("citation", "title")
 
     datatable(datasetInput(), escape = FALSE, 
-              selection = list(mode = "multiple"),
+              selection = list(mode = "multiple", selected = NULL),
               style = "auto", colnames = str_to_title(colnames(datasetInput())),
               options = list(columnDefs = list(list(visible=FALSE, 
                                                     targets=which(!show_columns)
@@ -354,28 +367,62 @@ server <- function(input, output) {
 
   })
 
-  # identify selected tabs ----
-  filteredTable_selected <- eventReactive(input$table_rows_selected, {
+  # proxy table for row manipulation ---
+  table_proxy <- dataTableProxy("table")
 
-    ids <- input$table_rows_selected
-    rownames(datasetInput()[ids,])
+  # clear selected rows with action button ---
+  selected_to_show <- reactiveValues(select = NULL, remember = NULL)
+  observeEvent(input$clearSelected, {
+
+    selected_to_show$select <- NULL
+    selected_to_show$remember <- NULL
+    table_proxy |> selectRows(NULL)
+
+  })
+
+  # preserve all selected articles after filtering ---
+  observeEvent(applyFilters(), {
+
+    to_select <- display_vars[applyFilters(),"id"] %in% selected_to_show$select
+    to_remember <- display_vars[!applyFilters(),"id"] %in% selected_to_show$select
+
+    table_proxy |>
+      selectRows(which(to_select))
+
+    selected_to_show$remember <- display_vars[!applyFilters(),][to_remember, "id"]
+
+  })
+
+  # identify and remember selected tabs ----
+  observeEvent(input$table_rows_selected, ignoreNULL = FALSE, {
+
+    row_numbers <- as.numeric(isolate(input$table_rows_selected))
+    ids <- rownames(datasetInput()[row_numbers,])
+
+    selected_to_show$select <- display_vars |>
+      filter((id %in% ids) | id %in% selected_to_show$remember) |>
+      arrange(citation) |>
+      select(id) |>
+      unlist()
+
+    names(selected_to_show$select) <- NULL
 
   })
 
   # generate selected tabs ----
   output$selected_with_tabs <- renderUI({
 
-    tabs <- filteredTable_selected() %>% 
+    tabs <- selected_to_show$select %>% 
               map2(1:length(.), ~ tabPanel(title = .x, {
 
-                datasetInput()[rownames(datasetInput()) == .,] |>
+                display_vars[display_vars$id == .,] |>
                   select(!id) |>
                   tabContent() |>
                   HTML()
 
               }))
 
-    tabsetPanel_wselection <- partial(tabsetPanel, selected = filteredTable_selected()[length(filteredTable_selected())])
+    tabsetPanel_wselection <- partial(tabsetPanel, selected = selected_to_show$select[length(selected_to_show$select)])
     
     tagList(exec(tabsetPanel_wselection, !!!tabs)) 
     
@@ -392,9 +439,9 @@ server <- function(input, output) {
 
     content = function(file) {
 
-      rows <- match(datasetInput()[input$table_rows_selected,"id"], lit$id)
+      rows <- match(selected_to_show$select, lit$id)
 
-      write.table(lit[rows,], file, sep = ",", 
+      write.csv(lit[rows,], file, 
                   row.names = FALSE, col.names = database_names$descriptions)
 
     }
@@ -403,7 +450,7 @@ server <- function(input, output) {
 
   # prints output to UI for debugging purposes ----
   # output$debug <- renderText({
-  #   toString(tmp_dir)
+  #   toString(selected_to_show$select)
   # })
 
   # executes a cleanup routine on application end ----
