@@ -140,7 +140,7 @@ ui  <- page_sidebar(
          dataTableOutput('table')),
 
     card(card_header(h4("More Information on Selected Articles")), 
-         uiOutput('selected_with_tabs')),
+        uiOutput('selected_with_tabs')),
 
     col_widths = c(7, 5)
 
@@ -411,6 +411,12 @@ server <- function(input, output) {
 
   # generate selected tabs ----
   output$selected_with_tabs <- renderUI({
+    HTML("test <b>test</b> test")
+  })
+  
+  output$selected_with_tabs <- renderUI({
+
+    req(selected_to_show$select)
 
     tabs <- selected_to_show$select %>% 
               map2(1:length(.), ~ tabPanel(title = .x, {
@@ -423,8 +429,8 @@ server <- function(input, output) {
               }))
 
     tabsetPanel_wselection <- partial(tabsetPanel, selected = selected_to_show$select[length(selected_to_show$select)])
-    
-    tagList(exec(tabsetPanel_wselection, !!!tabs)) 
+
+    tagList(exec(tabsetPanel_wselection, !!!tabs))
     
   }) 
 
