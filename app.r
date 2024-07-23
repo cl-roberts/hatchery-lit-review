@@ -154,6 +154,26 @@ server <- function(input, output) {
 
   # bs_themer()  # uncomment to enable a widget for previewing different themes
 
+  # render filtered table ---
+  output$table <- renderDataTable({
+
+    show_columns <- colnames(display_vars) %in% c("citation", "title")
+
+    datatable(display_vars, escape = FALSE, 
+              selection = list(mode = "multiple", selected = NULL),
+              style = "auto", colnames = str_to_title(colnames(display_vars)),
+              options = list(columnDefs = list(list(visible=FALSE, 
+                                                    targets=which(!show_columns)
+                                                    ))
+                            )
+              )
+
+  })
+
+  # proxy table ---
+  # all further manipulation will be made to proxy to avoid re-rendering DT ---
+  table_proxy <- dataTableProxy("table")
+
   # set of table filters reactive to user input ----
   applyFilters <- reactive({
 
@@ -339,65 +359,25 @@ server <- function(input, output) {
 
   })
 
-
-  # apply filters to main table ---
-  datasetInput <- reactive({
-
-    tbl <- display_vars |> 
-      filter(applyFilters())
-
-    rownames(tbl) <- tbl$id
-    tbl 
-
-  })
-
-  # render filtered table ---
-  output$table <- renderDataTable({
-
-    show_columns <- colnames(display_vars) %in% c("citation", "title")
-
-    datatable(datasetInput(), escape = FALSE, 
-              selection = list(mode = "multiple", selected = NULL),
-              style = "auto", colnames = str_to_title(colnames(datasetInput())),
-              options = list(columnDefs = list(list(visible=FALSE, 
-                                                    targets=which(!show_columns)
-                                                    ))
-                            )
-              )
-
-  })
-
-  # proxy table for row manipulation ---
-  table_proxy <- dataTableProxy("table")
-
-  # clear selected rows with action button ---
-  selected_to_show <- reactiveValues(select = NULL, remember = NULL)
-  observeEvent(input$clearSelected, {
-
-    selected_to_show$select <- NULL
-    selected_to_show$remember <- NULL
-    table_proxy |> selectRows(NULL)
-
-  })
-
-  # preserve all selected articles after filtering ---
+  # filter proxy table and preserve all selected articles ---
   observeEvent(applyFilters(), {
 
     to_select <- display_vars[applyFilters(),"id"] %in% selected_to_show$select
     to_remember <- display_vars[!applyFilters(),"id"] %in% selected_to_show$select
 
     table_proxy |>
+      replaceData(display_vars[applyFilters(),]) |>
       selectRows(which(to_select))
 
     selected_to_show$remember <- display_vars[!applyFilters(),][to_remember, "id"]
 
   })
 
-  # identify and remember selected tabs ----
+  # identify and remember selected selected rows to show in tabs ----
   observeEvent(input$table_rows_selected, ignoreNULL = FALSE, {
 
     row_numbers <- as.numeric(isolate(input$table_rows_selected))
-    ids <- rownames(datasetInput()[row_numbers,])
+    ids <- rownames(display_vars[applyFilters(),][row_numbers,])
 
     selected_to_show$select <- display_vars |>
       filter((id %in% ids) | id %in% selected_to_show$remember) |>
@@ -409,11 +389,7 @@ server <- function(input, output) {
 
   })
 
-  # generate selected tabs ----
-  output$selected_with_tabs <- renderUI({
-    HTML("test <b>test</b> test")
-  })
-  
+  # generate tabs with more information on selected rows ----
   output$selected_with_tabs <- renderUI({
 
     req(selected_to_show$select)
@@ -433,6 +409,16 @@ server <- function(input, output) {
     tagList(exec(tabsetPanel_wselection, !!!tabs))
     
   }) 
+
+  # clear selected rows with action button ---
+  selected_to_show <- reactiveValues(select = NULL, remember = NULL)
+  observeEvent(input$clearSelected, {
+
+    selected_to_show$select <- NULL
+    selected_to_show$remember <- NULL
+    table_proxy |> selectRows(NULL)
+
+  })
 
   # handle csv download for selected rows ---
   output$downloadData <- downloadHandler(
