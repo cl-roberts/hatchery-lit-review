@@ -52,7 +52,7 @@ ui  <- page_sidebar(
                 value = range(filter_vars$year),
                 sep = ""),
 
-    # row of dropdown menus ----
+    # dropdown menus ----
     fluidRow( 
         column(width = 6,
           selectInput(inputId = "genus",
@@ -84,17 +84,18 @@ ui  <- page_sidebar(
         )
       ),
 
-    # search bars ----
-    column(width = 12,
-      textInput(inputId = "key_words",
-                label = "Key Words", 
-                placeholder = "e.g. Stock Assessment")
-    ),
     column(width = 12,
       selectInput(inputId = "basin",
                   label = "Basin:",
                   choices = c("All", "Arctic", "Atlantic", "Pacific", "Indian", "Other"),
                   selected = "All"),
+    ),
+
+    # search bars ----
+    column(width = 12,
+      textInput(inputId = "key_words",
+                label = "Key Words", 
+                placeholder = "e.g. Stock Assessment")
     ),
     column(width = 12,
       textInput(inputId = "journal",
@@ -120,6 +121,10 @@ ui  <- page_sidebar(
     radioButtons(inputId = "climate_change",
                   label = "Addresses climate change?", 
                   choices = c("Yes", "No", "Either"), selected = "Either"),
+
+    # action button to reset ----
+    actionButton("resetFilters", "Reset Filters", 
+                 style = "display: flow;", icon = icon("rotate-left")),
 
     # action button to clear selected rows ----
     actionButton("clearSelected", "Clear Selected Articles", 
@@ -171,8 +176,13 @@ server <- function(input, output) {
   })
 
   # proxy table ---
-  # all further manipulation will be made to proxy to avoid re-rendering DT ---
+  # all further manipulation will be made to proxy to avoid re-rendering DT 
   table_proxy <- dataTableProxy("table")
+
+  # reactive object to keep track selected articles ---
+  # select: selected articles shown in table 
+  # remember: selected articles filtered out of table 
+  selected_to_show <- reactiveValues(select = NULL, remember = NULL)
 
   # set of table filters reactive to user input ----
   applyFilters <- reactive({
@@ -357,7 +367,7 @@ server <- function(input, output) {
           management_science_filter, climate_change_filter) |>
         apply(MARGIN = 1, FUN = all)
 
-  })
+  })  
 
   # filter proxy table and preserve all selected articles ---
   observeEvent(applyFilters(), {
@@ -410,8 +420,28 @@ server <- function(input, output) {
     
   }) 
 
+  # reset filters with action button ---
+  observeEvent(input$resetFilters, {
+
+    to_select <- display_vars$id %in% selected_to_show$select
+
+    table_proxy |> 
+      replaceData(display_vars[all_trues,]) |>
+      selectRows(which(to_select))
+      
+    updateSliderInput(inputId = "year", value = range(filter_vars$year))
+    updateSelectInput(inputId = "genus", selected = "All species")
+    updateSelectInput(inputId = "basin", selected = "All")
+    updateTextInput(inputId = "key_words", value = "")
+    updateTextInput(inputId = "journal", value = "")
+    updateCheckboxInput(inputId = "management_science", value = "NULL")
+    updateRadioButtons(inputId = "indigenous", selected = "Either")
+    updateRadioButtons(inputId = "peer_reviewed", selected = "Either")
+    updateRadioButtons(inputId = "climate_change", selected = "Either")
+
+  })
+
   # clear selected rows with action button ---
-  selected_to_show <- reactiveValues(select = NULL, remember = NULL)
   observeEvent(input$clearSelected, {
 
     selected_to_show$select <- NULL
@@ -442,7 +472,7 @@ server <- function(input, output) {
 
   # prints output to UI for debugging purposes ----
   # output$debug <- renderText({
-  #   toString(selected_to_show$select)
+  #   toString(input$resetFilters)
   # })
 
   # executes a cleanup routine on application end ----
