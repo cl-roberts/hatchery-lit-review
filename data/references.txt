@@ -1,0 +1,161 @@
+"x"
+"1" "
+
+Abadia-Cardoso, D. E. ;. J., Alicia; Pearse. 2016. Population genetic
+structure and ancestry of steelhead/rainbow trout (oncorhynchus mykiss)
+at the extreme southern edge of their range in north america.
+Conservation Genetics."
+"2" "Agren, A. J., Anni; Vainikka. 2019. Experimental crossbreeding reveals
+strain-specific variation in mortality, growth and personality in the
+brown trout (salmo trutta). Scientific Reports."
+"3" "Beacham, K. M., Terry D.; Jonsen. 2020. Large-scale parentage-based
+tagging and genetic stock identification applied in assessing
+mixed-stock fisheries and hatchery brood stocks for coho salmon in
+british columbia, canada. Canadian Journal of Fisheries and Aquatic
+Science."
+"4" "Bingham, B. M. ;. H., Daniel M.; Kennedy. 2014. Loss of genetic
+integrity in hatchery steelhead produced by juvenile-based broodstock
+and wild integration: Conflicts in production and conservation goals.
+North American Journal of Fisheries Management."
+"5" "Brunsdon, D. J. A., Eric Blake; Fraser. 2017. Dispersal and
+density-dependent growth of atlantic salmon (salmo salar) juveniles:
+Clumped versus dispersed stocking. Canadian Journal of Fisheries and
+Aquatic Sciences."
+"6" "Chenoweth, J. M. ;. M., Ellen M.; Straley. 2017. Humpback whales feed on
+hatchery-released juvenile salmon. Royal Society Open Science."
+"7" "Connor, K. F. ;. P., W. P.; Tiffan. 2013. Evidence for density-dependent
+changes in growth, downstream movement, and size of chinook salmon
+subyearlings in a large-river landscape. Transactions Of The American
+Fisheries Society."
+"8" "Davis, I. E., Melanie J.; Woo. 2018. Integrated diet analyses reveal
+contrasting trophic niches for wild and hatchery juvenile chinook salmon
+in a large river delta. Transactions of the American Fisheries Society."
+"9" "Evans, A. E. ;. G., Melissa L.; Kohler. 2020. Salmon-mediated nutrient
+flux in snake river sockeye salmon nursery lakes: The influence of
+depressed population size and hatchery supplementation. Lake and
+Reservoir Management."
+"10" "Evans, T. S. ;. R., Melissa L.; Hori. 2015. Transcriptomic responses of
+atlantic salmon (salmo salar) to environmental enrichment during
+juvenile rearing. PLOS ONE."
+"11" "Falcy, E., Matthew R.; Suring. 2018. Detecting the effects of management
+regime shifts in dynamic environments using multi-population state-space
+models. Biological Conservation."
+"12" "Floury, J. D., Mathieu; Colombet. 2018. Interspecific competition
+between restocked 0+ salmon parr (<iSalmo salar</i>) and native
+fish species in a large european river. Ecology of Freshwater Fish."
+"13" "Ford, A. H., Michael J.; Murdoch. 2015a. Using parentage analysis to
+estimate rates of straying and homing in chinook salmon (oncorhynchus
+tshawytscha). Molecular Ecology."
+"14" "Ford, T. N. ;. M., Michael; Pearsons. 2015b. The spawning success of
+early maturing resident hatchery chinook salmon in a natural river
+system. Transactions of the American Fisheries Society."
+"15" "Frost, E. M. A., Tessa J; Yasumiishi. 2021. Density?dependent effects of
+eastern kamchatka pink salmon (<iOncorhynchus gorbuscha</i>)
+and japanese chum salmon (<i>o. Keta</i>) on age?specific
+growth of western alaska chum salmon. Fisheries Oceanography."
+"16" "Haring, T. A. ;. W., Michaela W.; Johnston. 2016. Differences in egg
+quantity and quality among hatchery- and wild-origin chinook salmon
+(oncorhynchus tshawytscha). Canadian Journal of Fisheries and Aquatic
+Sciences."
+"17" "Hemstrom, S. B., William; van de Wetering. 2018. Fish ladder
+installation across a historical barrier asymmetrically increased
+conspecific introgressive hybridization between wild winter and summer
+run steelhead salmon in the siletz river, oregon. Canadian Journal of
+Fisheries and Aquatic Sciences."
+"18" "Hess, A. P., Jon E.; Matala. 2013. Archival genetic analysis suggests
+recent immigration has altered a population of chinook salmon in an
+unsupplemented wilderness area. Conservation Genetics."
+"19" "HOLSMAN, M. D. ;. B., KIRSTIN K.; SCHEUERELL. 2012. Interacting effects
+of translocation, artificial propagation, and environmental conditions
+on the marine survival of chinook salmon from the columbia river,
+washington, u.s.a.; Efectos interactuantes de la translocaci??n,
+propagaci??n artificial y condicion. Conservation Biology."
+"20" "Hyvarinen, P., Pekka; Rodewald. 2013. Enriched rearing improves survival
+of hatchery-reared atlantic salmon smolts during migration in the river
+tornionjoki. Canadian Journal of Fisheries and Aquatic Sciences."
+"21" "Irvine, M. ;. G., J. R.; OâNeill. 2013. Effects of smolt release timing
+and size on the survival of hatchery-origin coho salmon in the strait of
+georgia. Progress in Oceanography."
+"22" "Kitada, S. 2020. Lessons from japan marine stock enhancement and sea
+ranching programmes over 100 years. Reviews in Aquaculture."
+"23" "Kline, T. A., Paul A.; Flagg. 2014. Putting the red back in redfish
+lake, 20 years of progress toward saving the pacific northwestâs most
+endangered salmon population. Fisheries."
+"24" "Kock, R. W. ;. P., Tobias J.; Perry. 2018. Responses of hatchery- and
+natural-origin adult spring chinook salmon to a trap-and-haul
+reintroduction program. North American Journal of Fisheries Management."
+"25" "Kock, R. W. G., T J; Perry. 2016. Angler harvest, hatchery return, and
+tributary stray rates of recycled adult summer steelhead oncorhynchus
+mykiss in the cowlitz river, washington: Research & management.
+River research and Application."
+"26" "Losee, N. W. ;. D., James P.; Kendall. 2019. Changing salmon: An
+analysis of body mass, abundance, survival, and productivity trends
+across 45 years in puget sound. Fish & Fisheries."
+"27" "Matala, S. R. ;. S., A. P.; Narum. 2018. Early observations from
+monitoring a reintroduction program: Return of sockeye salmon to a
+nursery lake of historical importance. Transactions of the American
+Fisheries Society."
+"28" "McConnell, S. O., Casey J.; Atkinson. 2019. Is blood cortisol or
+vateritic otolith composition associated with natal dispersal or
+reproductive performance on the spawning grounds of straying and homing
+hatchery-produced chum salmon (oncorhynchus keta) in southeast alaska?
+Biology Open."
+"29" "Morita, N. K., Kentaro; Ayumi. 2014. River temperature drives salmon
+survivorship: Is it determined prior to ocean entry? Royal Society Open
+Science."
+"30" "Naslund, M. D. V., Joacim; Rosengren. 2013. Hatchery tank enrichment
+affects cortisol levels and shelter-seeking in atlantic salmon (salmo
+salar). Canadian Journal of Fisheries and Aquatic Sciences."
+"31" "Nekouei, R. K., Omid; Vanderstichel. 2019. Comparison of infectious
+agents detected from hatchery and wild juvenile coho salmon in british
+columbia, 2008-2018. PLOS One."
+"32" "Null, K. S. ;. H., Robert E.; Niemela. 2013. Post-spawn migrations of
+hatchery-origin oncorhynchus mykiss kelts in the central valley of
+california. Environmental Biology Fish."
+"33" "Ozerov, R. ;. B., M. Y.; Gross. 2016. Genomewide introgressive
+hybridization patterns in wild atlantic salmon influenced by inadvertent
+gene flow from hatchery releases. Molecular Ecology."
+"34" "Perry, D., R. Ian; Masson. 2013. An integrated analysis of the marine
+social-ecological system of the strait of georgia, canada, over the past
+four decades, and development of a regime shift index. Progress in
+Oceanography."
+"35" "Quinones, M. L. ;. M., Rebecca M.; Johnson. 2013. Hatchery practices may
+result in replacement of wild salmonids: Adult trends in the klamath
+basin, california. Environ Biol Fish."
+"36" "Rasmussen, S., G. H.; Pedersen. 2018. Sea trout (salmo trutta l.) In
+denmark. Brown Tour: Biology, Ecoloy and Management."
+"37" "Smith, R. L., Christian T.; French. 2014. Genetic composition of the
+warm springs river chinook salmon population maintained following eight
+generations of hatchery production. Transactions of the American
+Fisheries Society."
+"38" "Stark, E. J. ;. K., Eric J.; Atkinson. 2014. Captive rearing for chinook
+salmon (oncorhynchus tshawytscha) and atlantic salmon (salmo salar): The
+idaho and maine experiences. Reviews in Fish Biology and Fisheries."
+"39" "Stich, G. B. ;. K., Daniel S.; Zydlewski. 2015. Linking behavior,
+physiology, and survival of atlantic salmon smolts during estuary
+migration. Marine and Coastal Fisheries: Dynamics, Management, and
+Ecosystem Science."
+"40" "Stringwell, A. ;. S., R.; Lock. 2014. Maladaptation and phenotypic
+mismatch in hatchery-reared atlantic salmon salmo salar released in the
+wild. Journal of Fish Biology."
+"41" "Thompson, M. S., Neil F.; Blouin. 2015. The effects of high rearing
+density on the potential for domestication selection in hatchery culture
+of steelhead (oncorhynchus mykiss). Can. J. Fish. Aquat. Sci."
+"42" "Van Doornik, D. L. ;. W., Donald M.; Eddy. 2013. Genetic monitoring of
+threatened chinook salmon populations: Estimating introgression of
+nonnative hatchery stocks and temporal genetic changes. North American
+Journal of Fisheries Management."
+"43" "Wenne, R. P.-K., Roman; Bernas. 2016. Recent genetic changes in enhanced
+populations of sea trout (salmo trutta m. Trutta) in the southern baltic
+rivers revealed with SNP analysis (aricle 103). Aquatic Living
+Resources."
+"44" "Winans, J. M., Gary A.; Baker. 2017. Genetic characterization of
+oncorhynchus mykiss prior to dam removal with implications for
+recolonization of the elwha river watershed, washington. Transactions of
+the American Fisheries Society."
+"45" "Zelennikov, M. I., O. V.; Yurchak. 2019. Gametogenesis of pacific
+salmons: 1. The state of gonads of juvenile pink salmon oncorhynhus
+gorbuscha under the conditions of its natural and hatchery reproduction
+in sakhalin oblast. Journal of Ichthyology.
+
+"

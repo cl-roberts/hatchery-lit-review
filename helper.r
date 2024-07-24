@@ -39,3 +39,31 @@ tabContent <- function(x) {
   return(paste0(out, sep = " "))
 
 }
+
+
+# str_to_bib
+# this function creates a string to be written to a bib file for citations
+# x: named list or data frame with names corresponding to bib entries
+
+str_to_bib <- function(x) {
+
+  article_key <- gsub(" ", "", paste0(x$citation, x$id, collapse = "_")) 
+
+  x$title <- x$title |>
+    iconv("UTF-8", "UTF-8", sub = "") |>
+    str_remove("\\b<*>\\b")
+
+
+  article_meta <- list(author = x$authors_full,
+                      title = x$title,
+                      journal = x$journal,
+                      year = x$year)
+
+  out <- paste0("@Article{", article_key, ",\n", 
+                paste0("\t", names(article_meta), " = {", 
+                       article_meta, "},", collapse = "\n"),
+                "\n}")
+
+  return(out)
+
+}

@@ -7,13 +7,13 @@ if(interactive()) {
         here::here() |>
         dirname()
     lit_raw <- read.csv(here::here(app_dir, "data/lit-database.csv")) 
+    references <- read.table(here::here(app_dir, "data/references.txt")) 
 
 } else {
 
     lit_raw <- read.csv("data/lit-database.csv") 
-
+    references <- read.table("data/references.txt") 
 }
-
 
 database_names <- data.frame(
     column_names = c("x", "id", "citation", "title", "reviewer_name", 
@@ -46,6 +46,10 @@ lit <- lit_raw |>
     select(which(!duplicated(database_names$column_names))) |>
     rename(any_of(name_vector)) |>
     arrange(citation)
+
+lit$reference <- references |>
+    unlist() |>
+    str_replace(";", ",")
 
 lit$citation <- lit$citation |>
     str_to_title()

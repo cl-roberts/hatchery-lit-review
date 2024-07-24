@@ -1,3 +1,4 @@
-rsconnect/* 
+rsconnect/*
+utils/* 
 *.code-workspace 
 utils.r
