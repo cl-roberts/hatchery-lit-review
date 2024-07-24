@@ -1,7 +1,19 @@
 #---- read and wrangle data ---#
 
-# lit_raw <- read.csv("app/data/lit-database.csv") 
-lit_raw <- read.csv("data/lit-database.csv") 
+
+if(interactive()) {
+
+    app_dir <- grep("\\bapp.r\\b", list.files(recursive = TRUE), value = TRUE) |>
+        here::here() |>
+        dirname()
+    lit_raw <- read.csv(here::here(app_dir, "data/lit-database.csv")) 
+
+} else {
+
+    lit_raw <- read.csv("data/lit-database.csv") 
+
+}
+
 
 database_names <- data.frame(
     column_names = c("x", "id", "citation", "title", "reviewer_name", 
