@@ -93,6 +93,11 @@ ui  <- page_sidebar(
 
     # search bars ----
     column(width = 12,
+      textInput(inputId = "authors_full",
+                label = "Author search", 
+                placeholder = "e.g. ricker")
+    ),
+    column(width = 12,
       textInput(inputId = "key_words",
                 label = "Key Words", 
                 placeholder = "e.g. Stock Assessment")
@@ -204,11 +209,33 @@ server <- function(input, output) {
     # search for specific journals ---
     journal_filter <- grepl(input$journal, filter_vars$journal, ignore.case = TRUE)
 
+    # search specific authors ---
+    if (input$authors_full != "") {
+      
+      search_authors <- input$authors_full |>
+        str_replace(",", "") |>
+        str_split(" ") |>
+        unlist()
+
+    matches <- matrix(nrow = nrow(filter_vars), ncol = length(search_authors))
+    for(i in seq(search_authors)) {
+        matches[,i] <- grepl(pattern = paste0("\\b", search_authors[i], "\\b"), x = filter_vars$authors_full, ignore.case = TRUE)
+    }
+
+      authors_filter <- apply(X = matches, MARGIN = 1, FUN = all)
+  
+    } else {
+
+      authors_filter <- all_trues
+    
+    }
+
     # search using key words (uses both discipline and key themes) ---
     if (input$key_words != "") {
       
       search_key_words <- input$key_words |>
-        strsplit(split = " ") |>
+        str_replace(",", "") |>
+        str_split(" ") |>
         unlist()
 
       matches <- matrix(nrow = nrow(filter_vars), ncol = length(search_key_words))
@@ -362,7 +389,7 @@ server <- function(input, output) {
     }
 
     # combine all filters into a single logical vector ---
-    cbind(year_filter, basin_filter, journal_filter, key_words_filter,
+    cbind(year_filter, basin_filter, journal_filter, authors_filter, key_words_filter,
           genus_filter, species_filter, indigenous_filter, peer_reviewed_filter,
           management_science_filter, climate_change_filter) |>
         apply(MARGIN = 1, FUN = all)
@@ -432,6 +459,7 @@ server <- function(input, output) {
     updateSliderInput(inputId = "year", value = range(filter_vars$year))
     updateSelectInput(inputId = "genus", selected = "All species")
     updateSelectInput(inputId = "basin", selected = "All")
+    updateTextInput(inputId = "authors_full", value = "")
     updateTextInput(inputId = "key_words", value = "")
     updateTextInput(inputId = "journal", value = "")
     updateCheckboxInput(inputId = "management_science", value = "NULL")
@@ -455,7 +483,7 @@ server <- function(input, output) {
 
     filename = function() {
 
-      paste0("selected_articles", gsub(" ","_", gsub(":",".", Sys.time())),".csv")
+      paste0("selected_articles_", gsub(" ","_", gsub(":",".", Sys.time())),".csv")
 
     },
 
