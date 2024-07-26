@@ -1,19 +1,26 @@
 #---- read and wrangle data ---#
 
+library(dplyr)
+library(stringr)
+library(rvest)
+library(xml2)
 
 if(interactive()) {
 
     app_dir <- grep("\\bapp.r\\b", list.files(recursive = TRUE), value = TRUE) |>
         here::here() |>
         dirname()
-    lit_raw <- read.csv(here::here(app_dir, "data/lit-database.csv")) 
-    references <- read.table(here::here(app_dir, "data/references.txt")) 
 
 } else {
 
-    lit_raw <- read.csv("data/lit-database.csv") 
-    references <- read.table("data/references.txt") 
+    app_dir <- "./"
+
 }
+
+lit_raw <- read.csv(here::here(app_dir, "data/lit-database.csv")) 
+references <- read_html(here::here(app_dir, "data/references.html")) |>
+    html_elements(".csl-entry") |>
+    xml_text(trim = TRUE) 
 
 database_names <- data.frame(
     column_names = c("x", "id", "citation", "title", "reviewer_name", 
@@ -47,9 +54,8 @@ lit <- lit_raw |>
     rename(any_of(name_vector)) |>
     arrange(citation)
 
-lit$reference <- references |>
-    unlist() |>
-    str_replace(";", ",")
+lit$reference <- paste0("<div style='text-indent: -36px; padding-left: 36px;'>",  
+                        references, "</div>")
 
 lit$citation <- lit$citation |>
     str_to_title()
@@ -68,7 +74,7 @@ filter_vars <- lit |>
 
 # table for displaying information on filtered articles ----
 display_vars <- lit |>
-  select(id, citation, authors_full, title, key_finding, hypothesis, objective, 
+  select(id, reference, citation, title, key_finding, hypothesis, objective, 
          methods, conclusion, key_themes, discipline, augmentation_objective, 
          augmentation_type, aquatic_system_type, generations, life_stage_released, 
          age_released, feeding_stage_released, wild_definition, conservation_standard, 

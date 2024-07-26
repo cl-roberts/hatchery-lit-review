@@ -13,9 +13,8 @@
 library(shiny)
 library(DT)
 library(bslib)
-library(tidyverse)
 library(rlang)
-library(stringr)
+library(purrr)
 
 # source utility scripts ----
 source("setup.r")
@@ -435,7 +434,7 @@ server <- function(input, output) {
               map2(1:length(.), ~ tabPanel(title = .x, {
 
                 display_vars[display_vars$id == .,] |>
-                  select(!id) |>
+                  select(!c(id, citation, title)) |>
                   tabContent() |>
                   HTML()
 

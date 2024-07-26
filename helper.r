@@ -1,5 +1,7 @@
 #--- helper functions ---#
 
+library(stringr)
+
 # tabContent
 # this function generates HTML code from a R list to be displayed below table
 # x: R list to be converted to HTML code
@@ -14,7 +16,7 @@ tabContent <- function(x) {
                   "not applicable", "see above", "irrelevant to study",
                   "not mentioned", "none stated", "no specific")
 
-  out <- paste0("<b>", tabHeaders[1], ":</b><br>", x[1], "<br><br>")
+  out <- paste0("<b>", tabHeaders[1], ":</b><br>", x[1], "<br>")
   for(i in 2:length(x)) {
 
     if(is.null(x[i]) | x[i] == "" | x[i] == " " | x[i] == "No" | x[i] == "No." | 
@@ -50,9 +52,10 @@ str_to_bib <- function(x) {
   article_key <- gsub(" ", "", paste0(x$citation, x$id, collapse = "_")) 
 
   x$title <- x$title |>
-    iconv("UTF-8", "UTF-8", sub = "") |>
-    str_remove("\\b<*>\\b")
+    iconv("UTF-8", "UTF-8", sub = "")
 
+  x$authors_full <- x$authors_full |>
+    str_replace_all("; ", " and ")
 
   article_meta <- list(author = x$authors_full,
                       title = x$title,
