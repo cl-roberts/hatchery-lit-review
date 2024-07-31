@@ -34,7 +34,7 @@ tabContent <- function(x) {
 
     if (condition) next    
     
-    out <- append(out, paste0("<b>", tabHeaders[i], ":</b><br>", x[i], "<br><br>"))
+    out <- append(out, paste0("<b>", tabHeaders[i], ":</b><br>", iconv(x[i], sub = ""), "<br><br>"))
   
   }
 
