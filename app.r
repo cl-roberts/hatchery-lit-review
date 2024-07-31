@@ -13,7 +13,6 @@
 library(shiny)
 library(DT)
 library(bslib)
-library(rlang)
 library(purrr)
 
 # source utility scripts ----
@@ -430,19 +429,18 @@ server <- function(input, output) {
 
     req(selected_to_show$select)
 
-    tabs <- selected_to_show$select %>% 
-              map2(1:length(.), ~ tabPanel(title = .x, {
+    tabs <- map(selected_to_show$select, ~ tabPanel(title = .x, {
 
-                display_vars[display_vars$id == .,] |>
+                display_vars[display_vars$id == .x,] |>
                   select(!c(id, citation, title)) |>
                   tabContent() |>
                   HTML()
 
-              }))
+            }))
 
     tabsetPanel_wselection <- partial(tabsetPanel, selected = selected_to_show$select[length(selected_to_show$select)])
 
-    tagList(exec(tabsetPanel_wselection, !!!tabs))
+    do.call("tabsetPanel_wselection", tabs)
     
   }) 
 
