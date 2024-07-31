@@ -7,19 +7,19 @@ pertaining to a fish hatchery literature review. See the app in action
 
 ### Reproducibility
 
-The shiny app was written in R 4.2.0 using the following packages:
+The shiny app was written in R 4.4.1 using the following packages:
 
 - shiny 1.8.11
 - bslib 0.7.0
-- DT 0.23
+- DT 0.33
 - rlang 1.1.4
-- purrr 1.0.1
-- stringr 1.5.0
-- dplyr 1.1.0
-- rvest 1.0.3
-- xml2 1.3.3
-- renv 1.0.3
+- purrr 1.0.2
+- stringr 1.5.1
+- dplyr 1.1.4
+- rvest 1.0.4
+- xml2 1.3.6
+- renv 1.0.7
 
-This repository uses `renv` for package management. To replicate the library with
-which this app was made, clone the repo and install the project library using
-`renv::restore()`.
+This repository uses [`renv`](https://rstudio.github.io/renv/articles/renv.html) 
+for package management. To replicate the library with which this app was made, 
+clone the repo and install the project library using `renv::restore()`.
