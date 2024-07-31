@@ -429,7 +429,7 @@ server <- function(input, output) {
 
     req(selected_to_show$select)
 
-    tabs <- map(selected_to_show$select, ~ tabPanel(title = .x, {
+    tabs <- map(selected_to_show$select, ~ nav_panel(title = .x, {
 
                 display_vars[display_vars$id == .x,] |>
                   select(!c(id, citation, title)) |>
@@ -438,9 +438,9 @@ server <- function(input, output) {
 
             }))
 
-    tabsetPanel_wselection <- partial(tabsetPanel, selected = selected_to_show$select[length(selected_to_show$select)])
+    navset_wselection <- partial(navset_tab, selected = selected_to_show$select[length(selected_to_show$select)])
 
-    do.call("tabsetPanel_wselection", tabs)
+    do.call("navset_wselection", tabs)
     
   }) 
 
