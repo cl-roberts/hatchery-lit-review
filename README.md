@@ -12,7 +12,6 @@ The shiny app was written in R 4.4.1 using the following packages:
 - shiny 1.8.11
 - bslib 0.7.0
 - DT 0.33
-- rlang 1.1.4
 - purrr 1.0.2
 - stringr 1.5.1
 - dplyr 1.1.4
